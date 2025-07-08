@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TechMarket - Underground Marketplace</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.15/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    .gradient-text {
+      background: linear-gradient(90deg, #4facfe, #00f2fe);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-style: italic;
+    }
+    .slanted-text {
+      font-style: italic;
+    }
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-top: 4px solid #3B82F6;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #error {
+      color: red;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <div id="error"></div>
+
+  <script type="text/babel">
+    function AuthModal({ onClose, onLogin, onSignup }) {
+      const [isLogin, setIsLogin] = React.useState(true);
+      const [identifier, setIdentifier] = React.useState('');
+      const [password, setPassword] = React.useState('');
+      const [username, setUsername] = React.useState('');
+      const [email, setEmail] = React.useState('');
+      const [firstName, setFirstName] = React.useState('');
+      const [lastName, setLastName] = React.useState('');
+      const [error, setError] = React.useState('');
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        try {
+          if (isLogin) {
+            if (!identifier || !password) {
+              setError('Email/Username and password are required');
+              return;
+            }
+            const response = await fetch('/api/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: identifier, password })
+            });
+            const data = await response.json();
+            if (response.ok) {
+              onLogin(data.id, data.username);
+              onClose();
+            } else {
+              setError(data.error || 'Login failed');
+            }
+          } else {
+            if (!username || !email || !password) {
+              setError('Username, email, and password are required for signup');
+              return;
+            }
+            const response = await fetch('/api/create-user', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username, email, password, firstName, lastName })
+            });
+            const data = await response.json();
+            if (response.ok) {
+              onSignup(data.id, data.username);
+              onClose();
+            } else {
+              setError(data.error || 'Signup failed');
+            }
+          }
+        } catch (err) {
+          setError('Network error');
+          document.getElementById('error').textContent = `Error: ${err.message}`;
+        }
+      };
+
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">{isLogin ? 'Login' : 'Signup'}</h2>
+            {error && <p className="text-red-500 mb-4">{error}</p>}
+            <form onSubmit={handleSubmit}>
+              {!isLogin && (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Username"
+                    className="w-full p-2 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    className="w-full p-2 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder="First Name"
+                    className="w-full p-2 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Last Name"
+                    className="w-full p-2 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
+                </>
+              )}
+              <input
+                type="text"
+                placeholder="Email or Username"
+                className="w-full p-2 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                className="w-full p-2 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                type="submit"
+                className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
+              >
+                {isLogin ? 'Login' : 'Signup'}
+              </button>
+            </form>
+            <p className="mt-2 text-center">
+              {isLogin ? "Don't have an account? " : "Already a member? "}
+              <a
+                href="#"
+                className="text-blue-500 hover:underline"
+                onClick={(e) => { e.preventDefault(); setIsLogin(!isLogin); }}
+              >
+                {isLogin ? 'Signup' : 'Login'}
+              </a>
+            </p>
+            <button
+              className="mt-4 text-blue-500 hover:underline w-full text-center"
+              onClick={onClose}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function Header({ cartItems, user, onLogin, onLogout, onShowAuth, onShowCart, onShowAdmin, onShowAbout }) {
+      return (
+        <header className="bg-gradient-to-r from-gray-900 to-blue-900 text-white p-4 sticky top-0 z-10 shadow-lg">
+          <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center">
+            <div className="flex items-center mb-2 sm:mb-0">
+              <i className="fas fa-store text-4xl text-white mr-4"></i>
+              <div className="flex flex-col">
+                <h1 className="text-4xl font-bold gradient-text">TechMarket</h1>
+                <p className="text-sm font-light text-white mt-1 gradient-text">Underground Marketplace</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <input
+                type="text"
+                placeholder="Search products..."
+                className="p-2 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400 transition w-full sm:w-auto"
+                onChange={(e) => window.dispatchEvent(new CustomEvent('search', { detail: e.target.value }))}
+              />
+              {user && cartItems.length > 0 && (
+                <div className="relative">
+                  <i className="fas fa-shopping-cart text-xl cursor-pointer" onClick={onShowCart}></i>
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full px-2 text-sm animate-pulse">{cartItems.length}</span>
+                </div>
+              )}
+              {user ? (
+                <>
+                  <button
+                    className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-3 py-1 rounded-lg hover:from-blue-600 hover:to-blue-800 transition"
+                    onClick={onLogout}
+                  >
+                    Logout ({user.username})
+                  </button>
+                  <button
+                    className="text-purple-500 hover:text-purple-600 transition"
+                    onClick={onShowAdmin}
+                  >
+                    Admin
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="text-white hover:text-gray-300 underline"
+                  onClick={onShowAuth}
+                >
+                  Sign In/Sign Up
+                </button>
+              )}
+              <button
+                className="text-white hover:text-gray-300 underline"
+                onClick={onShowAbout}
+              >
+                About Us
+              </button>
+            </div>
+          </div>
+        </header>
+      );
+    }
+
+    function CategoryFilter({ categories, selectedCategory, onSelectCategory }) {
+      return (
+        <div className="bg-white p-4 shadow-md">
+          <div className="flex flex-col gap-1">
+            <button
+              className={`w-full px-4 py-2 rounded-lg text-left ${selectedCategory === 0 ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'} transition`}
+              onClick={() => onSelectCategory(0)}
+            >
+              All Categories
+            </button>
+            {categories.map(category => (
+              <button
+                key={category.id}
+                className={`w-full px-4 py-2 rounded-lg text-left flex items-center gap-2 ${selectedCategory === category.id ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'} transition`}
+                onClick={() => onSelectCategory(category.id)}
+              >
+                <i className={category.icon}></i>
+                {category.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function ProductCard({ product, addToCart, user, buyNow, onShowDetails }) {
+      return (
+        <div
+          className="bg-white rounded-lg shadow-md p-4 cursor-pointer transition-transform hover:scale-105 hover:shadow-xl"
+          onClick={() => onShowDetails(product.id)}
+        >
+          <img src={product.imageUrl} alt={product.title} className="w-full h-48 object-cover rounded-lg" />
+          <h3 className="text-lg font-semibold mt-2 text-gray-800 slanted-text">{product.title}</h3>
+          <p className="text-gray-600 text-sm line-clamp-2 slanted-text">{product.description}</p>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-yellow-500 slanted-text">{product.rating} ★</span>
+            <span className="text-gray-500 text-sm slanted-text">({product.reviewCount} reviews)</span>
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <div>
+              <span className="text-xl font-bold text-green-600 slanted-text">${product.price}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                className="bg-blue-500 text-white px-2 py-1 text-sm rounded-lg hover:bg-blue-600 transition disabled:opacity-50"
+                onClick={(e) => { e.stopPropagation(); addToCart(product.id); }}
+                disabled={!user}
+              >
+                Add to Cart
+              </button>
+              <button
+                className="bg-green-500 text-white px-2 py-1 text-sm rounded-lg hover:bg-green-600 transition disabled:opacity-50"
+                onClick={(e) => { e.stopPropagation(); buyNow(product.id); }}
+                disabled={!user}
+              >
+                Buy Now
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function CartModal({ cartItems, onClose, removeFromCart, onCheckout }) {
+      const total = cartItems.reduce((sum, item) => sum + parseFloat(item.product.price) * item.quantity, 0);
+
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Your Cart</h2>
+            {cartItems.length === 0 ? (
+              <p className="text-gray-500">Your cart is empty</p>
+            ) : (
+              <>
+                <ul className="space-y-4">
+                  {cartItems.map(item => (
+                    <li key={item.id} className="flex justify-between items-center border-b pb-2">
+                      <div>
+                        <h3 className="font-semibold slanted-text">{item.product.title}</h3>
+                        <p className="slanted-text">${item.product.price} x {item.quantity}</p>
+                      </div>
+                      <button
+                        className="text-red-500 hover:text-red-700"
+                        onClick={() => removeFromCart(item.productId)}
+                      >
+                        Remove
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-4 text-right">
+                  <p className="text-lg font-bold slanted-text">Total: ${total.toFixed(2)}</p>
+                  <button
+                    className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
+                    onClick={onCheckout}
+                  >
+                    Checkout
+                  </button>
+                </div>
+              </>
+            )}
+            <button
+              className="mt-4 text-blue-500 hover:underline w-full text-center"
+              onClick={onClose}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function DeveloperModal({ onClose, onSubmit, isLoading, productId, onBack, returnTo, products }) {
+      const [isDeveloper, setIsDeveloper] = React.useState('yes');
+      const [githubEmail, setGithubEmail] = React.useState('');
+      const [developerEmail, setDeveloperEmail] = React.useState('');
+      const [paymentData, setPaymentData] = React.useState({ address: '', amount: '', orderId: null, currency: 'btc' });
+      const [paymentStatus, setPaymentStatus] = React.useState('pending');
+      const [showSuccess, setShowSuccess] = React.useState(false);
+      const [selectedCurrency, setSelectedCurrency] = React.useState('btc');
+      const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+      const submitBtnRef = React.useRef(null);
+      const backBtnRef = React.useRef(null);
+      const spinnerRef = React.useRef(null);
+
+      const supportedCurrencies = ['btc', 'eth', 'ltc', 'bch', 'usdt', 'xrp'];
+
+      React.useEffect(() => {
+        const radios = document.querySelectorAll('input[name="is-developer"]');
+        radios.forEach(radio => {
+          radio.addEventListener('change', (e) => setIsDeveloper(e.target.value));
+        });
+        return () => {
+          radios.forEach(radio => radio.removeEventListener('change', () => {}));
+        };
+      }, []);
+
+      const handleSubmit = async () => {
+        if (isDeveloper === 'yes' && !githubEmail) {
+          alert('Please provide your GitHub email.');
+          return;
+        }
+        if (isDeveloper === 'no' && !developerEmail) {
+          alert('Please provide your developer\'s email.');
+          return;
+        }
+
+        const submitBtn = submitBtnRef.current;
+        const backBtn = backBtnRef.current;
+        const spinner = spinnerRef.current;
+        if (!submitBtn || !backBtn || !spinner) {
+          console.error('Required DOM elements not found');
+          alert('An error occurred. Please try again.');
+          return;
+        }
+        submitBtn.disabled = true;
+        backBtn.disabled = true;
+        spinner.classList.remove('hidden');
+
+        try {
+          let order;
+          if (productId) {
+            const orderResponse = await fetch('/api/create-order', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: parseInt(localStorage.getItem('userId')), productId, quantity: 1 })
+            });
+            if (!orderResponse.ok) {
+              const errorData = await orderResponse.json();
+              throw new Error(errorData.error || 'Failed to create order');
+            }
+            order = await orderResponse.json();
+          } else {
+            const cartResponse = await fetch(`/api/cart/${localStorage.getItem('userId')}`);
+            if (!cartResponse.ok) {
+              if (cartResponse.status === 404) {
+                alert('User not found. Please login again.');
+                handleLogout();
+              }
+              throw new Error('Failed to fetch cart');
+            }
+            const cartItems = await cartResponse.json();
+            if (cartItems.length === 0) {
+              alert('Your cart is empty.');
+              spinner.classList.add('hidden');
+              submitBtn.disabled = false;
+              backBtn.disabled = false;
+              return;
+            }
+            const orderResponse = await fetch('/api/create-order', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: parseInt(localStorage.getItem('userId')), cartItems })
+            });
+            if (!orderResponse.ok) {
+              const errorData = await orderResponse.json();
+              throw new Error(errorData.error || 'Failed to create order');
+            }
+            order = await orderResponse.json();
+          }
+
+          await fetch('/api/log-developer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: parseInt(localStorage.getItem('userId')), isDeveloper, githubEmail, developerEmail })
+          });
+
+          const amount = productId ? parseFloat(products.find(p => p.id === productId)?.price || '0') : order.totalAmount;
+          if (isNaN(amount) || amount <= 0) {
+            throw new Error('Invalid payment amount');
+          }
+
+          const paymentResponse = await fetch('/api/create-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId: order.id,
+              userId: parseInt(localStorage.getItem('userId')),
+              amount: amount.toString(),
+              email: isDeveloper === 'yes' ? githubEmail : developerEmail,
+              currency: selectedCurrency
+            })
+          });
+          if (!paymentResponse.ok) {
+            const errorData = await paymentResponse.json();
+            throw new Error(errorData.error || 'Failed to create payment');
+          }
+          const paymentDataResult = await paymentResponse.json();
+          if (paymentDataResult.pay_address && paymentDataResult.pay_amount) {
+            setPaymentData({
+              address: paymentDataResult.pay_address,
+              amount: paymentDataResult.pay_amount,
+              orderId: order.id,
+              currency: selectedCurrency
+            });
+            setPaymentStatus('waiting');
+          } else {
+            throw new Error('No payment details received');
+          }
+          onSubmit(isDeveloper, githubEmail, developerEmail, productId);
+        } catch (error) {
+          console.error('Payment error:', error);
+          document.getElementById('error').textContent = `Error: ${error.message}`;
+          alert(`Payment processing failed: ${error.message}`);
+        } finally {
+          spinner.classList.add('hidden');
+          submitBtn.disabled = false;
+          backBtn.disabled = false;
+        }
+      };
+
+      const handlePaid = async () => {
+        setPaymentStatus('processing');
+        const spinner = spinnerRef.current;
+        if (!spinner) {
+          console.error('Spinner not found');
+          return;
+        }
+        spinner.classList.remove('hidden');
+
+        try {
+          const response = await fetch(`/api/check-payment-status/${paymentData.orderId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: parseInt(localStorage.getItem('userId')) })
+          });
+          const data = await response.json();
+          if (data.status === 'paid') {
+            setShowSuccess(true);
+            if (!productId) window.dispatchEvent(new CustomEvent('cart-cleared'));
+          } else {
+            setPaymentStatus('waiting');
+            alert('Payment not yet confirmed. Please wait or check your transaction.');
+          }
+        } catch (error) {
+          document.getElementById('error').textContent = `Error checking payment: ${error.message}`;
+          setPaymentStatus('waiting');
+        } finally {
+          spinner.classList.add('hidden');
+        }
+      };
+
+      const copyAddress = () => {
+        if (paymentData.address) {
+          navigator.clipboard.writeText(paymentData.address).then(() => {
+            const confirmation = document.getElementById('copy-confirmation');
+            if (confirmation) {
+              confirmation.classList.remove('hidden');
+              setTimeout(() => confirmation.classList.add('hidden'), 2000);
+            }
+          });
+        }
+      };
+
+      const pollOrderStatus = () => {
+        const interval = setInterval(async () => {
+          try {
+            const response = await fetch(`/api/check-payment-status/${paymentData.orderId}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: parseInt(localStorage.getItem('userId')) })
+            });
+            const data = await response.json();
+            if (data.status === 'paid') {
+              setShowSuccess(true);
+              clearInterval(interval);
+              if (!productId) window.dispatchEvent(new CustomEvent('cart-cleared'));
+            } else if (data.status === 'failed' || data.status === 'expired') {
+              setPaymentStatus('waiting');
+              clearInterval(interval);
+              alert('Payment failed or expired. Please try again.');
+            }
+          } catch (error) {
+            document.getElementById('error').textContent = `Error checking payment status: ${error.message}`;
+            setPaymentStatus('waiting');
+          }
+        }, 15000);
+        return () => clearInterval(interval);
+      };
+
+      React.useEffect(() => {
+        if (paymentStatus === 'waiting' && paymentData.orderId) {
+          const cleanup = pollOrderStatus();
+          return cleanup;
+        }
+      }, [paymentStatus, paymentData.orderId]);
+
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">
+              {productId ? 'Buy Now Details' : 'Checkout Details'}
+            </h2>
+            {!paymentData.orderId && (
+              <>
+                <div className="mb-4">
+                  <label className="block text-lg font-semibold mb-2">Are you a developer?</label>
+                  <div className="flex space-x-4 mb-2">
+                    <label>
+                      <input
+                        type="radio"
+                        name="is-developer"
+                        value="yes"
+                        defaultChecked={isDeveloper === 'yes'}
+                        className="mr-1"
+                      /> Yes
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="is-developer"
+                        value="no"
+                        defaultChecked={isDeveloper === 'no'}
+                        className="mr-1"
+                      /> No
+                    </label>
+                  </div>
+                </div>
+                <div id="yes-fields" className={`mb-4 ${isDeveloper !== 'yes' ? 'hidden' : ''}`}>
+                  <label htmlFor="github-email" className="block text-sm mb-1">GitHub Email</label>
+                  <input
+                    id="github-email"
+                    type="email"
+                    className="w-full p-2 bg-gray-200 text-black rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={githubEmail}
+                    onChange={(e) => setGithubEmail(e.target.value)}
+                    placeholder="e.g., user@example.com"
+                  />
+                </div>
+                <div id="no-fields" className={`mb-4 ${isDeveloper !== 'no' ? 'hidden' : ''}`}>
+                  <label htmlFor="developer-email" className="block text-sm mb-1">Developer's Email</label>
+                  <input
+                    id="developer-email"
+                    type="email"
+                    className="w-full p-2 bg-gray-200 text-black rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={developerEmail}
+                    onChange={(e) => setDeveloperEmail(e.target.value)}
+                    placeholder="e.g., dev@example.com"
+                  />
+                </div>
+                <div className="relative mb-4">
+                  <label className="block text-lg font-semibold mb-2">Buy With</label>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="w-full p-2 bg-gray-200 text-black rounded focus:outline-none focus:ring-2 focus:ring-blue-400 flex justify-between items-center"
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    >
+                      {selectedCurrency.toUpperCase()}
+                      <i className={`fas ${isDropdownOpen ? 'fa-angle-up' : 'fa-angle-down'} ml-2`}></i>
+                    </button>
+                    {isDropdownOpen && (
+                      <div className="absolute w-full bg-white border rounded-lg mt-1 shadow-lg z-10 animate-fadeInDown">
+                        {supportedCurrencies.map(currency => (
+                          <button
+                            key={currency}
+                            type="button"
+                            className="w-full text-left p-2 hover:bg-gray-100 rounded-lg"
+                            onClick={() => {
+                              setSelectedCurrency(currency);
+                              setIsDropdownOpen(false);
+                            }}
+                          >
+                            {currency.toUpperCase()}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                  <button
+                    id="modal-back"
+                    ref={backBtnRef}
+                    className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500 w-full sm:w-auto"
+                    onClick={() => onBack()}
+                    disabled={isLoading}
+                  >
+                    Back
+                  </button>
+                  <button
+                    id="modal-submit"
+                    ref={submitBtnRef}
+                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-full sm:w-auto"
+                    onClick={handleSubmit}
+                    disabled={isLoading}
+                  >
+                    Submit & Pay
+                  </button>
+                </div>
+              </>
+            )}
+            {paymentData.orderId && paymentStatus === 'waiting' && (
+              <>
+                <p className="mb-2"><strong>Send exactly:</strong> <span className="text-green-400">{paymentData.amount} {paymentData.currency.toUpperCase()}</span></p>
+                <p className="mb-2"><strong>To wallet address:</strong></p>
+                <div className="flex items-center mb-4 space-x-2">
+                  <p id="payment-address" className="text-yellow-400 break-all">{paymentData.address}</p>
+                  <button onClick={copyAddress} className="text-blue-400 hover:text-blue-300" title="Copy address">
+                    <i className="fas fa-copy"></i>
+                  </button>
+                  <span id="copy-confirmation" className="text-green-400 text-sm hidden">Copied!</span>
+                </div>
+                <div className="flex justify-center mb-4">
+                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${paymentData.currency.toLowerCase()}:${paymentData.address}?amount=${paymentData.amount}`} alt="QR Code" className="w-40 h-40" />
+                </div>
+                <button
+                  className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 w-full"
+                  onClick={handlePaid}
+                  disabled={isLoading}
+                >
+                  I've Paid
+                </button>
+                <button
+                  className="mt-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 w-full"
+                  onClick={onClose}
+                >
+                  Close
+                </button>
+              </>
+            )}
+            {paymentStatus === 'processing' && (
+              <div className="flex flex-col items-center">
+                <div id="loading-spinner" ref={spinnerRef} className="flex justify-center items-center mb-4">
+                  <div className="spinner"></div>
+                  <span className="ml-2 text-gray-600">Processing...</span>
+                </div>
+                <p>Please wait while we verify your payment.</p>
+                <button
+                  className="mt-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 w-full"
+                  onClick={onClose}
+                >
+                  Close
+                </button>
+              </div>
+            )}
+            {showSuccess && (
+              <div className="text-center">
+                <h2 className="text-2xl font-bold mb-4 text-green-600">Thank You!</h2>
+                <p>Thanks for your order. We will get back to you via {isDeveloper === 'yes' ? githubEmail : developerEmail}.</p>
+                <button
+                  className="mt-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 w-full"
+                  onClick={onClose}
+                >
+                  Close
+                </button>
+              </div>
+            )}
+            <div id="loading-spinner" ref={spinnerRef} className="flex justify-center items-center mb-4 hidden">
+              <div className="spinner"></div>
+              <span className="ml-2 text-gray-600">Processing...</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function ProductDetailsModal({ product, onClose, user, buyNow }) {
+      return (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex justify-center items-center"
+          onClick={onClose}
+        >
+          <div
+            className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold mb-4 text-gray-800 slanted-text">{product.title}</h2>
+            <img src={product.imageUrl} alt={product.title} className="w-full h-64 object-cover rounded-lg mb-4" />
+            <p className="text-gray-600 mb-4 slanted-text">{product.description}</p>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-yellow-500 slanted-text">{product.rating} ★</span>
+              <span className="text-gray-500 text-sm slanted-text">({product.reviewCount} reviews)</span>
+            </div>
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold slanted-text">Reviews</h3>
+              <ul className="list-disc pl-5">
+                <li className="text-gray-600 slanted-text">Great product! - User1 ★★★★★</li>
+                <li className="text-gray-600 slanted-text">Good value for money. - User2 ★★★★☆</li>
+              </ul>
+            </div>
+            <div className="flex items-center justify-between mt-4">
+              <span className="text-xl font-bold text-green-600 slanted-text">${product.price}</span>
+              <button
+                className="bg-green-500 text-white px-2 py-1 text-sm rounded-lg hover:bg-green-600 transition disabled:opacity-50"
+                onClick={(e) => { e.stopPropagation(); buyNow(product.id); }}
+                disabled={!user}
+              >
+                Buy Now
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function AdminModal({ onClose, user }) {
+      const [password, setPassword] = React.useState('');
+      const [showContent, setShowContent] = React.useState(false);
+      const [error, setError] = React.useState('');
+
+      const handleUnlock = () => {
+        if (password === 'Temitope12') {
+          setShowContent(true);
+          setError('');
+        } else {
+          setError('Incorrect password! Only admins can access.');
+        }
+      };
+
+      if (!showContent) {
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex justify-center items-center">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <h2 className="text-2xl font-bold mb-4 text-gray-800">Admin Locked</h2>
+              <p className="mb-4">Only for admins, enter admin password</p>
+              {error && <p className="text-red-500 mb-4">{error}</p>}
+              <input
+                type="password"
+                placeholder="Enter Password"
+                className="w-full p-2 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
+                onClick={handleUnlock}
+              >
+                Unlock
+              </button>
+              <button
+                className="mt-4 text-blue-500 hover:underline w-full text-center"
+                onClick={onClose}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Admin Panel</h2>
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold">Add Product</h3>
+              <input type="text" placeholder="Title" className="w-full p-2 mb-2 border rounded-lg" id="admin-title" />
+              <input type="text" placeholder="Description" className="w-full p-2 mb-2 border rounded-lg" id="admin-desc" />
+              <input type="text" placeholder="Price" className="w-full p-2 mb-2 border rounded-lg" id="admin-price" />
+              <input type="number" placeholder="Category ID" className="w-full p-2 mb-2 border rounded-lg" id="admin-cat" />
+              <button
+                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+                onClick={async () => {
+                  const title = document.getElementById('admin-title').value;
+                  const desc = document.getElementById('admin-desc').value;
+                  const price = document.getElementById('admin-price').value;
+                  const cat = document.getElementById('admin-cat').value;
+                  await fetch('/api/admin/add-product', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description: desc, price, categoryId: parseInt(cat) }),
+                  });
+                  alert('Product added!');
+                  document.getElementById('admin-title').value = '';
+                  document.getElementById('admin-desc').value = '';
+                  document.getElementById('admin-price').value = '';
+                  document.getElementById('admin-cat').value = '';
+                }}
+              >
+                Add Product
+              </button>
+            </div>
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold">Remove Product</h3>
+              <input type="number" placeholder="Product ID" className="w-full p-2 mb-2 border rounded-lg" id="admin-prod-id" />
+              <button
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+                onClick={async () => {
+                  const id = document.getElementById('admin-prod-id').value;
+                  await fetch(`/api/admin/remove-product/${id}`, { method: 'DELETE' });
+                  alert('Product removed!');
+                  document.getElementById('admin-prod-id').value = '';
+                }}
+              >
+                Remove Product
+              </button>
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold">Orders</h3>
+              <ul id="admin-orders" className="list-disc pl-5"></ul>
+              {user && user.id === 1 && (
+                fetch(`/api/admin/orders?userId=${user.id}`)
+                  .then(res => res.json())
+                  .then(orders => {
+                    const list = document.getElementById('admin-orders');
+                    list.innerHTML = orders.map(order => `<li>Order ${order.id}: ${order.status} (Total: $${order.totalAmount}, Email: ${order.userEmail || 'N/A'})</li>`).join('');
+                  })
+                  .catch(err => console.error('Error fetching orders:', err))
+              )}
+            </div>
+            <button className="mt-4 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600" onClick={onClose}>Close</button>
+          </div>
+        </div>
+      );
+    }
+
+    function SupportModal({ onClose }) {
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Support or Enquiry</h2>
+            <p className="mb-4">Contact us at: <a href="mailto:info@toolhatch.store" className="text-blue-500 hover:underline">info@toolhatch.store</a></p>
+            <form>
+              <input type="text" placeholder="Username" className="w-full p-2 mb-4 border rounded-lg" id="support-username" />
+              <textarea placeholder="Review" className="w-full p-2 mb-4 border rounded-lg" id="support-review" rows="4"></textarea>
+              <button
+                className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                onClick={() => {
+                  const username = document.getElementById('support-username').value;
+                  const review = document.getElementById('support-review').value;
+                  alert(`Thank you, ${username}! Review: ${review}`);
+                  onClose();
+                }}
+              >
+                Submit Review
+              </button>
+            </form>
+            <button className="mt-4 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600" onClick={onClose}>Close</button>
+          </div>
+        </div>
+      );
+    }
+
+    function AboutUsModal({ onClose }) {
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">About Us</h2>
+            <p className="text-gray-600 mb-4">Welcome to Underground Marketplace, your trusted hub for exclusive products. Founded in 2025, we aim to provide a seamless shopping experience with top-notch security and support. Join our community today!</p>
+            <button
+              className="mt-4 text-blue-500 hover:underline w-full text-center"
+              onClick={onClose}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [categories, setCategories] = React.useState([]);
+      const [products, setProducts] = React.useState([]);
+      const [cartItems, setCartItems] = React.useState([]);
+      const [selectedCategory, setSelectedCategory] = React.useState(0);
+      const [searchQuery, setSearchQuery] = React.useState('');
+      const [user, setUser] = React.useState(null);
+      const [showAuth, setShowAuth] = React.useState(false);
+      const [showCart, setShowCart] = React.useState(false);
+      const [showDeveloper, setShowDeveloper] = React.useState(false);
+      const [isLoading, setIsLoading] = React.useState(false);
+      const [currentProductId, setCurrentProductId] = React.useState(null);
+      const [showAdmin, setShowAdmin] = React.useState(false);
+      const [showSupport, setShowSupport] = React.useState(false);
+      const [showDetails, setShowDetails] = React.useState(false);
+      const [selectedProduct, setSelectedProduct] = React.useState(null);
+      const [showAbout, setShowAbout] = React.useState(false);
+
+      React.useEffect(() => {
+        fetch('/api/categories')
+          .then(res => res.json())
+          .then(setCategories)
+          .catch(err => document.getElementById('error').textContent = `Error fetching categories: ${err.message}`);
+        fetch('/api/products')
+          .then(res => res.json())
+          .then(setProducts)
+          .catch(err => document.getElementById('error').textContent = `Error fetching products: ${err.message}`);
+        const userId = localStorage.getItem('userId');
+        const username = localStorage.getItem('username');
+        if (userId && username) {
+          setUser({ id: parseInt(userId), username });
+          fetch(`/api/cart/${userId}`)
+            .then(res => res.json())
+            .then(setCartItems)
+            .catch(err => document.getElementById('error').textContent = `Error fetching cart: ${err.message}`);
+        }
+        const handleSearch = (e) => {
+          setSearchQuery(e.detail);
+          fetch(`/api/search?q=${encodeURIComponent(e.detail)}`)
+            .then(res => res.json())
+            .then(setProducts)
+            .catch(err => document.getElementById('error').textContent = `Error searching: ${err.message}`);
+        };
+        window.addEventListener('search', handleSearch);
+        const handleCartCleared = () => setCartItems([]);
+        window.addEventListener('cart-cleared', handleCartCleared);
+        return () => {
+          window.removeEventListener('search', handleSearch);
+          window.removeEventListener('cart-cleared', handleCartCleared);
+        };
+      }, []);
+
+      React.useEffect(() => {
+        if (selectedCategory === 0) {
+          fetch('/api/products')
+            .then(res => res.json())
+            .then(setProducts)
+            .catch(err => document.getElementById('error').textContent = `Error fetching products: ${err.message}`);
+        } else {
+          fetch(`/api/products/category/${selectedCategory}`)
+            .then(res => res.json())
+            .then(setProducts)
+            .catch(err => document.getElementById('error').textContent = `Error fetching category products: ${err.message}`);
+        }
+      }, [selectedCategory]);
+
+      const addToCart = async (productId) => {
+        if (!user) {
+          alert("Please log in to add items to cart!");
+          setShowAuth(true);
+          return;
+        }
+        try {
+          await fetch('/api/add-to-cart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, productId, quantity: 1 })
+          });
+          const updatedCart = await fetch(`/api/cart/${user.id}`).then(res => res.json());
+          setCartItems(updatedCart);
+        } catch (err) {
+          document.getElementById('error').textContent = `Error adding to cart: ${err.message}`;
+        }
+      };
+
+      const removeFromCart = async (productId) => {
+        try {
+          await fetch(`/api/cart/${user.id}/${productId}`, { method: 'DELETE' });
+          const updatedCart = await fetch(`/api/cart/${user.id}`).then(res => res.json());
+          setCartItems(updatedCart);
+        } catch (err) {
+          document.getElementById('error').textContent = `Error removing from cart: ${err.message}`;
+        }
+      };
+
+      const buyNow = async (productId) => {
+        if (!user) {
+          alert("Please log in to buy!");
+          setShowAuth(true);
+          return;
+        }
+        setCurrentProductId(productId);
+        setShowDeveloper(true);
+      };
+
+      const handleLogin = (userId, username) => {
+        setUser({ id: userId, username });
+        localStorage.setItem('userId', userId);
+        localStorage.setItem('username', username);
+        setShowAuth(false);
+      };
+
+      const handleSignup = (userId, username) => {
+        setUser({ id: userId, username });
+        localStorage.setItem('userId', userId);
+        localStorage.setItem('username', username);
+        setShowAuth(false);
+      };
+
+      const handleLogout = () => {
+        setUser(null);
+        setCartItems([]);
+        localStorage.removeItem('userId');
+        localStorage.removeItem('username');
+      };
+
+      const handleCheckout = async () => {
+        if (!user) {
+          alert("Please log in to checkout!");
+          setShowAuth(true);
+          return;
+        }
+        if (cartItems.length === 0) {
+          alert("Your cart is empty!");
+          return;
+        }
+        setShowDeveloper(true);
+      };
+
+      const handleDeveloperSubmit = (isDeveloper, githubEmail, developerEmail, productId) => {
+        setShowDeveloper(true);
+      };
+
+      const handleShowDetails = (productId) => {
+        const product = products.find(p => p.id === productId);
+        setSelectedProduct(product);
+        setShowDetails(true);
+      };
+
+      const handleBackFromDeveloper = () => {
+        setShowDeveloper(false);
+        setShowCart(false);
+        setShowDetails(false);
+      };
+
+      return (
+        <div className="min-h-screen">
+          <Header
+            cartItems={cartItems}
+            user={user}
+            onLogin={handleLogin}
+            onLogout={handleLogout}
+            onShowAuth={() => setShowAuth(true)}
+            onShowCart={() => setShowCart(true)}
+            onShowAdmin={() => setShowAdmin(true)}
+            onShowAbout={() => setShowAbout(true)}
+          />
+          {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={handleLogin} onSignup={handleSignup} />}
+          {showCart && <CartModal cartItems={cartItems} onClose={() => setShowCart(false)} removeFromCart={removeFromCart} onCheckout={handleCheckout} />}
+          {showDeveloper && (
+            <DeveloperModal
+              onClose={() => setShowDeveloper(false)}
+              onSubmit={handleDeveloperSubmit}
+              isLoading={isLoading}
+              productId={currentProductId}
+              products={products}
+              onBack={handleBackFromDeveloper}
+              returnTo={currentProductId ? 'details' : 'cart'}
+            />
+          )}
+          {showAdmin && <AdminModal onClose={() => setShowAdmin(false)} user={user} />}
+          {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
+          {showDetails && selectedProduct && (
+            <ProductDetailsModal
+              product={selectedProduct}
+              onClose={() => setShowDetails(false)}
+              user={user}
+              buyNow={buyNow}
+            />
+          )}
+          {showAbout && <AboutUsModal onClose={() => setShowAbout(false)} />}
+          <main className="container mx-auto p-6 flex">
+            <div className="w-1/5 sticky top-20 h-[calc(100vh-200px)] overflow-y-auto bg-gray-100 p-4 rounded-lg">
+              <CategoryFilter
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onSelectCategory={setSelectedCategory}
+              />
+            </div>
+            <div className="w-4/5 ml-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {products.map(product => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  addToCart={addToCart}
+                  user={user}
+                  buyNow={buyNow}
+                  onShowDetails={handleShowDetails}
+                />
+              ))}
+            </div>
+          </main>
+          <footer className="bg-gradient-to-r from-gray-900 to-blue-900 text-white p-6 mt-8 relative">
+            <div className="container mx-auto text-center">
+              <p>© 2025 TechMarket. All rights reserved.</p>
+              <button
+                className="mt-4 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition"
+                onClick={() => setShowSupport(true)}
+              >
+                Support or Enquiry
+              </button>
+              <p className="mt-2 text-sm">Email support at <a href="mailto:info@hatchtool.shop" className="text-blue-300 hover:underline">info@hatchtool.shop</a></p>
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    try {
+      root.render(<App />);
+    } catch (err) {
+      document.getElementById('error').textContent = `Render error: ${err.message}`;
+    }
+  </script>
+</body>
+</html>
