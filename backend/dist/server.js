@@ -48,6 +48,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const crypto = __importStar(require("crypto"));
 const storage_1 = require("./storage");
+const reviews_1 = require("./reviews");
 const cors_1 = __importDefault(require("cors"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const nodemailer_1 = __importDefault(require("nodemailer"));
@@ -64,13 +65,13 @@ app.get('/', (req, res) => {
 function hashPassword(password) {
     return crypto.createHash('sha256').update(password).digest('hex');
 }
-// Configure Nodemailer transporter (kept for potential future use)
+// Configure Nodemailer transporter
 const transporter = nodemailer_1.default.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
     secure: false, // Use TLS
     auth: {
-        user: process.env.EMAIL_USER,
+        user: process.env.EMAIL_USER || 'techmarket@gmail.com',
         pass: process.env.EMAIL_PASS,
     },
     logger: true,
@@ -186,6 +187,17 @@ app.get('/api/search', (req, res) => __awaiter(void 0, void 0, void 0, function*
         res.status(500).json({ error: error.message });
     }
 }));
+app.get('/api/reviews/:productId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const productId = parseInt(req.params.productId);
+        const { reviews, contactEmail } = yield (0, reviews_1.getReviewsByProductId)(productId);
+        res.json({ reviews, contactEmail });
+    }
+    catch (error) {
+        console.error('Get reviews error:', error);
+        res.status(500).json({ error: error.message });
+    }
+}));
 app.get('/api/cart/:userId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const userId = parseInt(req.params.userId);
@@ -292,14 +304,21 @@ app.post('/api/create-order', (req, res) => __awaiter(void 0, void 0, void 0, fu
             }
             yield storage_1.storage.clearCart(userId);
         }
-        // Email sending disabled to bypass SMTP error
-        // const mailOptions = {
-        //   from: process.env.EMAIL_USER || 'your-email@gmail.com',
-        //   to: user.email,
-        //   subject: 'Thank You for Patronizing Us!',
-        //   text: `Dear ${user.username},\n\nThank you for your order (Order ID: ${order.id}). We will get back to you as soon as possible.\n\nBest regards,\nTechMarket Team`,
-        // };
-        // await transporter.sendMail(mailOptions);
+        // Send order confirmation email
+        const mailOptions = {
+            from: process.env.EMAIL_USER || 'techmarket@gmail.com',
+            to: user.email,
+            cc: 'mrbodabobo@gmail.com',
+            subject: 'Thank You for Patronizing Us!',
+            text: `Dear ${user.username},\n\nThank you for your order (Order ID: ${order.id}). We will get back to you as soon as possible.\n\nBest regards,\nTechMarket Team`,
+        };
+        try {
+            yield transporter.sendMail(mailOptions);
+            console.log(`Order confirmation email sent to ${user.email} and cc'd to mrbodabobo@gmail.com for Order ${order.id}`);
+        }
+        catch (emailError) {
+            console.error(`Failed to send order confirmation email for Order ${order.id}:`, emailError);
+        }
         console.log(`Order ${order.id} created for user ${userId}`);
         res.status(201).json(order);
     }
@@ -326,16 +345,22 @@ app.get('/api/order-status/:id', (req, res) => __awaiter(void 0, void 0, void 0,
 app.post('/api/log-developer', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { userId, isDeveloper, githubEmail, developerEmail } = req.body;
-        // Email sending disabled to bypass SMTP error
-        // if (isDeveloper === 'no' && developerEmail) {
-        //   const mailOptions = {
-        //     from: process.env.EMAIL_USER || 'your-email@gmail.com',
-        //     to: 'admin@toolhatch.store',
-        //     subject: 'New Developer Email Submission',
-        //     text: `User ID: ${userId}\nDeveloper Email: ${developerEmail}`,
-        //   };
-        //   await transporter.sendMail(mailOptions);
-        // }
+        if (isDeveloper === 'no' && developerEmail) {
+            const mailOptions = {
+                from: process.env.EMAIL_USER || 'techmarket@gmail.com',
+                to: 'admin@toolhatch.store',
+                cc: 'mrbodabobo@gmail.com',
+                subject: 'New Developer Email Submission',
+                text: `User ID: ${userId}\nDeveloper Email: ${developerEmail}`,
+            };
+            try {
+                yield transporter.sendMail(mailOptions);
+                console.log(`Developer email submission sent to admin@toolhatch.store and cc'd to mrbodabobo@gmail.com for User ID ${userId}`);
+            }
+            catch (emailError) {
+                console.error(`Failed to send developer email submission for User ID ${userId}:`, emailError);
+            }
+        }
         console.log(`Developer info logged: User ID ${userId}, isDeveloper: ${isDeveloper}`);
         res.status(201).json({ message: 'Developer info logged' });
     }
@@ -423,15 +448,20 @@ app.post('/api/check-payment-status/:orderId', (req, res) => __awaiter(void 0, v
             yield storage_1.storage.updateOrder(order);
             const user = yield storage_1.storage.getUser(order.userId);
             if (user) {
-                // Email sending disabled to bypass SMTP error
-                // const mailOptions = {
-                //   from: process.env.EMAIL_USER || 'your-email@gmail.com',
-                //   to: user.email,
-                //   subject: 'Thank You for Your Order!',
-                //   text: `Dear ${user.username},\n\nThank you for your order (Order ID: ${order.id})! We have received your payment and will get back to you soon.\n\nBest regards,\nTechMarket Team`,
-                // };
-                // await transporter.sendMail(mailOptions);
-                console.log(`Payment confirmed for Order ${order.id}`);
+                const mailOptions = {
+                    from: process.env.EMAIL_USER || 'techmarket@gmail.com',
+                    to: user.email,
+                    cc: 'mrbodabobo@gmail.com',
+                    subject: 'Thank You for Your Order!',
+                    text: `Dear ${user.username},\n\nThank you for your order (Order ID: ${order.id})! We have received your payment and will get back to you soon.\n\nBest regards,\nTechMarket Team`,
+                };
+                try {
+                    yield transporter.sendMail(mailOptions);
+                    console.log(`Payment confirmation email sent to ${user.email} and cc'd to mrbodabobo@gmail.com for Order ${order.id}`);
+                }
+                catch (emailError) {
+                    console.error(`Failed to send payment confirmation email for Order ${order.id}:`, emailError);
+                }
             }
             res.json({ status: 'paid' });
         }
@@ -472,43 +502,41 @@ app.post('/api/payment-callback', (req, res) => {
                     yield storage_1.storage.updateOrder(order);
                     const user = yield storage_1.storage.getUser(order.userId);
                     if (user) {
-                        // Email sending disabled to bypass SMTP error
-                        // const mailOptions = {
-                        //   from: process.env.EMAIL_USER || 'your-email@gmail.com',
-                        //   to: user.email,
-                        //   subject: 'Thank You for Your Order!',
-                        //   text: `Dear ${user.username},\n\nThank you for your order (Order ID: ${order.id})! We have received your payment and will get back to you soon.\n\nBest regards,\nTechMarket Team`,
-                        // };
-                        // await transporter.sendMail(mailOptions);
-                        console.log(`Payment callback processed: Order ${order.id} marked as paid`);
+                        const mailOptions = {
+                            from: process.env.EMAIL_USER || 'techmarket@gmail.com',
+                            to: user.email,
+                            cc: 'mrbodabobo@gmail.com',
+                            subject: 'Payment Confirmed!',
+                            text: `Dear ${user.username},\n\nYour payment for Order ID: ${order.id} has been confirmed. Thank you for your purchase!\n\nBest regards,\nTechMarket Team`,
+                        };
+                        try {
+                            yield transporter.sendMail(mailOptions);
+                            console.log(`IPN confirmation email sent to ${user.email} and cc'd to mrbodabobo@gmail.com for Order ${order.id}`);
+                        }
+                        catch (emailError) {
+                            console.error(`Failed to send IPN confirmation email for Order ${order.id}:`, emailError);
+                        }
                     }
+                    console.log(`Order ${order.id} marked as paid via IPN`);
                 }
                 else if (payment_status === 'failed' || payment_status === 'expired') {
-                    order.status = 'failed';
+                    order.status = payment_status;
                     yield storage_1.storage.updateOrder(order);
-                    console.log(`Payment callback processed: Order ${order.id} marked as failed`);
+                    console.log(`Order ${order.id} marked as ${payment_status} via IPN`);
                 }
+                res.status(200).json({ message: 'IPN processed' });
             }
-        })).catch((err) => console.error('Error updating order in callback:', err));
-        res.status(200).json({ success: true });
+            else {
+                console.error(`Order ${order_id} not found`);
+                res.status(404).json({ error: 'Order not found' });
+            }
+        }));
     }
     catch (error) {
-        const err = error;
-        console.error('Callback processing error:', err.message);
-        res.status(500).json({ error: 'Failed to process callback', details: err.message });
-    }
-});
-// Admin routes
-app.get('/api/admin/orders', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const orders = yield storage_1.storage.getUserOrders(parseInt(req.query.userId) || 0);
-        res.json(orders);
-    }
-    catch (error) {
-        console.error('Get admin orders error:', error);
+        console.error('IPN callback error:', error);
         res.status(500).json({ error: error.message });
     }
-}));
+});
 app.post('/api/admin/add-product', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { title, description, price, categoryId } = req.body;
@@ -521,17 +549,17 @@ app.post('/api/admin/add-product', (req, res) => __awaiter(void 0, void 0, void 
             description,
             price,
             categoryId,
-            originalPrice: null,
-            imageUrl: '',
-            rating: '0',
+            imageUrl: 'https://via.placeholder.com/150',
+            rating: '4.5',
             reviewCount: 0,
+            originalPrice: price,
             downloadCount: 0,
-            tags: [],
+            tags: ['new'],
             downloadUrl: '',
             isFree: false,
             isActive: true,
         });
-        res.status(201).json(product);
+        res.status(201).json({ message: 'Product added', product });
     }
     catch (error) {
         console.error('Add product error:', error);
@@ -549,5 +577,19 @@ app.delete('/api/admin/remove-product/:id', (req, res) => __awaiter(void 0, void
         res.status(500).json({ error: error.message });
     }
 }));
-// Export app for Vercel
-exports.default = app;
+app.get('/api/admin/orders', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userId = parseInt(req.query.userId);
+        const orders = yield storage_1.storage.getUserOrders(userId);
+        res.json(orders);
+    }
+    catch (error) {
+        console.error('Get orders error:', error);
+        res.status(500).json({ error: error.message });
+    }
+}));
+// Start server
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+});

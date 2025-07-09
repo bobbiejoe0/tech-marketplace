@@ -40,7 +40,21 @@ export type Product = {
   updatedAt: Date;
 };
 
-export type InsertProduct = Omit<Product, "id" | "createdAt" | "updatedAt">;
+export type InsertProduct = {
+  title: string;
+  description: string;
+  price: string;
+  originalPrice: string | null;
+  categoryId: number;
+  imageUrl: string;
+  rating: string;
+  reviewCount: number;
+  downloadCount: number;
+  tags: string[];
+  downloadUrl: string;
+  isFree: boolean;
+  isActive: boolean;
+};
 
 export type CartItem = {
   id: number;

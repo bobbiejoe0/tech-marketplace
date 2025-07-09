@@ -64,7 +64,7 @@ class MemStorage {
         // Seed categories
         const categoriesData = [
             {
-                name: "App Development",
+                name: "App Dev.",
                 slug: "app-development",
                 icon: "fas fa-mobile-alt",
                 description: "Mobile and web application development tools",
@@ -82,7 +82,7 @@ class MemStorage {
                 description: "Website development and deployment tools",
             },
             {
-                name: "Shopify Themes",
+                name: "Hacked Shopify Themes",
                 slug: "shopify-themes",
                 icon: "fas fa-shopping-bag",
                 description: "Premium Shopify store themes and templates",
@@ -835,8 +835,8 @@ class MemStorage {
             {
                 title: "Luxury Fashion Store Theme",
                 description: "Premium Shopify theme for luxury fashion brands with elegant design and advanced product showcase.",
-                price: "299.00",
-                originalPrice: "399.00",
+                price: "75.00",
+                originalPrice: "75 .00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.9",
@@ -848,7 +848,7 @@ class MemStorage {
             {
                 title: "Electronics Mega Store",
                 description: "Feature-rich Shopify theme for electronics stores with product comparison and technical specifications.",
-                price: "199.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1607252650355-f7fd0460ccdb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.8",
@@ -860,7 +860,7 @@ class MemStorage {
             {
                 title: "Minimalist Jewelry Theme",
                 description: "Clean and minimalist Shopify theme perfect for jewelry stores with high-quality image galleries.",
-                price: "179.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.7",
@@ -872,7 +872,7 @@ class MemStorage {
             {
                 title: "Organic Food & Grocery Theme",
                 description: "Fresh and natural Shopify theme for organic food stores with subscription and delivery features.",
-                price: "149.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.6",
@@ -884,7 +884,7 @@ class MemStorage {
             {
                 title: "Sports & Fitness Equipment",
                 description: "Dynamic Shopify theme for sports equipment stores with size guides and product videos.",
-                price: "199.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.8",
@@ -896,8 +896,8 @@ class MemStorage {
             {
                 title: "Home Decor & Furniture",
                 description: "Sophisticated Shopify theme for furniture stores with room visualization and AR preview.",
-                price: "249.00",
-                originalPrice: "349.00",
+                price: "75.00",
+                originalPrice: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.9",
@@ -909,7 +909,7 @@ class MemStorage {
             {
                 title: "Beauty & Cosmetics Store",
                 description: "Glamorous Shopify theme for beauty brands with color swatches and ingredient listings.",
-                price: "179.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.7",
@@ -921,7 +921,7 @@ class MemStorage {
             {
                 title: "Handmade Crafts Marketplace",
                 description: "Artisan-focused Shopify theme for handmade products with artist profiles and custom orders.",
-                price: "129.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1452860606245-08befc0ff44b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.6",
@@ -933,7 +933,7 @@ class MemStorage {
             {
                 title: "Pet Supplies & Accessories",
                 description: "Playful Shopify theme for pet stores with breed-specific products and care guides.",
-                price: "149.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.8",
@@ -945,7 +945,7 @@ class MemStorage {
             {
                 title: "Automotive Parts Store",
                 description: "Technical Shopify theme for auto parts with vehicle compatibility and installation guides.",
-                price: "199.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.7",
@@ -957,7 +957,7 @@ class MemStorage {
             {
                 title: "Digital Products Marketplace",
                 description: "Modern Shopify theme for digital products with instant downloads and license management.",
-                price: "169.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.6",
@@ -969,7 +969,7 @@ class MemStorage {
             {
                 title: "Books & Publishing Theme",
                 description: "Literary Shopify theme for bookstores with author pages and reading samples.",
-                price: "139.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.5",
@@ -981,7 +981,7 @@ class MemStorage {
             {
                 title: "Multi-Vendor Marketplace",
                 description: "Comprehensive Shopify theme supporting multiple vendors with commission tracking.",
-                price: "299.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.8",
@@ -993,7 +993,7 @@ class MemStorage {
             {
                 title: "Subscription Box Service",
                 description: "Specialized Shopify theme for subscription services with recurring billing and customization.",
-                price: "219.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.7",
@@ -1005,7 +1005,7 @@ class MemStorage {
             {
                 title: "Restaurant & Food Delivery",
                 description: "Restaurant-focused Shopify theme with menu builder and delivery zone management.",
-                price: "189.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.6",
@@ -1017,7 +1017,7 @@ class MemStorage {
             {
                 title: "B2B Wholesale Platform",
                 description: "Professional B2B Shopify theme with wholesale pricing and bulk order management.",
-                price: "249.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.8",
@@ -1029,7 +1029,7 @@ class MemStorage {
             {
                 title: "Medical & Healthcare Store",
                 description: "Healthcare-compliant Shopify theme for medical supplies with prescription management.",
-                price: "199.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.7",
@@ -1041,7 +1041,7 @@ class MemStorage {
             {
                 title: "Event Tickets & Booking",
                 description: "Event-focused Shopify theme with calendar integration and seat selection.",
-                price: "179.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.6",
@@ -1053,7 +1053,7 @@ class MemStorage {
             {
                 title: "Photography Portfolio Store",
                 description: "Creative Shopify theme for photographers with print sales and licensing options.",
-                price: "159.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.8",
@@ -1065,7 +1065,7 @@ class MemStorage {
             {
                 title: "Basic Starter Theme",
                 description: "Simple and clean Shopify starter theme with essential e-commerce features.",
-                price: "0.00",
+                price: "75.00",
                 categoryId: 4,
                 imageUrl: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400",
                 rating: "4.3",

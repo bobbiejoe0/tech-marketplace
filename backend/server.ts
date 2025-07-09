@@ -1,15 +1,15 @@
 import express, { Request, Response, Application } from 'express';
 import * as crypto from 'crypto';
 import { storage } from './storage';
+import { getReviewsByProductId } from './reviews';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import nodemailer from 'nodemailer';
 import axios, { AxiosResponse, AxiosError } from 'axios';
 import { AxiosRequestConfig } from 'axios';
-import { reviewPool } from './reviews';
 
 // Import types from schema.ts
-import { InsertOrder, InsertProduct, User, Product, Order, CartItem, NOWPaymentsResponse, Review } from './types/schema';
+import { InsertOrder, InsertProduct, User, Product, Order, CartItem, NOWPaymentsResponse } from './types/schema';
 
 const app: Application = express();
 
@@ -45,8 +45,6 @@ interface MemStorage {
   getUserOrders(userId: number): Promise<Order[]>;
   createProduct(product: InsertProduct): Promise<Product>;
   removeProduct(id: number): Promise<void>;
-  createReview(review: { productId: number; userId: number; username: string; text: string; rating: number }): Promise<Review>;
-  getReviewsByProduct(productId: number): Promise<Review[]>;
   developers?: any[];
 }
 
@@ -55,13 +53,13 @@ function hashPassword(password: string): string {
   return crypto.createHash('sha256').update(password).digest('hex');
 }
 
-// Configure Nodemailer transporter (kept for potential future use)
+// Configure Nodemailer transporter
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
   secure: false, // Use TLS
   auth: {
-    user: process.env.EMAIL_USER,
+    user: process.env.EMAIL_USER || 'techmarket@gmail.com',
     pass: process.env.EMAIL_PASS,
   },
   logger: true,
@@ -187,6 +185,17 @@ app.get('/api/search', async (req: Request, res: Response) => {
   }
 });
 
+app.get('/api/reviews/:productId', async (req: Request, res: Response) => {
+  try {
+    const productId = parseInt(req.params.productId);
+    const { reviews, contactEmail } = await getReviewsByProductId(productId);
+    res.json({ reviews, contactEmail });
+  } catch (error) {
+    console.error('Get reviews error:', error);
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 app.get('/api/cart/:userId', async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.userId);
@@ -291,6 +300,20 @@ app.post('/api/create-order', async (req: Request, res: Response) => {
       }
       await storage.clearCart(userId);
     }
+    // Send order confirmation email
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'techmarket@gmail.com',
+      to: user.email,
+      cc: 'mrbodabobo@gmail.com',
+      subject: 'Thank You for Patronizing Us!',
+      text: `Dear ${user.username},\n\nThank you for your order (Order ID: ${order.id}). We will get back to you as soon as possible.\n\nBest regards,\nTechMarket Team`,
+    };
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log(`Order confirmation email sent to ${user.email} and cc'd to mrbodabobo@gmail.com for Order ${order.id}`);
+    } catch (emailError) {
+      console.error(`Failed to send order confirmation email for Order ${order.id}:`, emailError);
+    }
     console.log(`Order ${order.id} created for user ${userId}`);
     res.status(201).json(order);
   } catch (error) {
@@ -322,6 +345,21 @@ app.post('/api/log-developer', async (req: Request, res: Response) => {
       githubEmail?: string;
       developerEmail?: string;
     };
+    if (isDeveloper === 'no' && developerEmail) {
+      const mailOptions = {
+        from: process.env.EMAIL_USER || 'techmarket@gmail.com',
+        to: 'admin@toolhatch.store',
+        cc: 'mrbodabobo@gmail.com',
+        subject: 'New Developer Email Submission',
+        text: `User ID: ${userId}\nDeveloper Email: ${developerEmail}`,
+      };
+      try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Developer email submission sent to admin@toolhatch.store and cc'd to mrbodabobo@gmail.com for User ID ${userId}`);
+      } catch (emailError) {
+        console.error(`Failed to send developer email submission for User ID ${userId}:`, emailError);
+      }
+    }
     console.log(`Developer info logged: User ID ${userId}, isDeveloper: ${isDeveloper}`);
     res.status(201).json({ message: 'Developer info logged' });
   } catch (error) {
@@ -419,7 +457,19 @@ app.post('/api/check-payment-status/:orderId', async (req: Request, res: Respons
       await storage.updateOrder(order);
       const user = await storage.getUser(order.userId);
       if (user) {
-        console.log(`Payment confirmed for Order ${order.id}`);
+        const mailOptions = {
+          from: process.env.EMAIL_USER || 'techmarket@gmail.com',
+          to: user.email,
+          cc: 'mrbodabobo@gmail.com',
+          subject: 'Thank You for Your Order!',
+          text: `Dear ${user.username},\n\nThank you for your order (Order ID: ${order.id})! We have received your payment and will get back to you soon.\n\nBest regards,\nTechMarket Team`,
+        };
+        try {
+          await transporter.sendMail(mailOptions);
+          console.log(`Payment confirmation email sent to ${user.email} and cc'd to mrbodabobo@gmail.com for Order ${order.id}`);
+        } catch (emailError) {
+          console.error(`Failed to send payment confirmation email for Order ${order.id}:`, emailError);
+        }
       }
       res.json({ status: 'paid' });
     } else {
@@ -463,101 +513,41 @@ app.post('/api/payment-callback', (req: Request, res: Response) => {
           await storage.updateOrder(order);
           const user = await storage.getUser(order.userId);
           if (user) {
-            console.log(`Payment callback processed: Order ${order.id} marked as paid`);
+            const mailOptions = {
+              from: process.env.EMAIL_USER || 'techmarket@gmail.com',
+              to: user.email,
+              cc: 'mrbodabobo@gmail.com',
+              subject: 'Payment Confirmed!',
+              text: `Dear ${user.username},\n\nYour payment for Order ID: ${order.id} has been confirmed. Thank you for your purchase!\n\nBest regards,\nTechMarket Team`,
+            };
+            try {
+              await transporter.sendMail(mailOptions);
+              console.log(`IPN confirmation email sent to ${user.email} and cc'd to mrbodabobo@gmail.com for Order ${order.id}`);
+            } catch (emailError) {
+              console.error(`Failed to send IPN confirmation email for Order ${order.id}:`, emailError);
+            }
           }
+          console.log(`Order ${order.id} marked as paid via IPN`);
         } else if (payment_status === 'failed' || payment_status === 'expired') {
-          order.status = 'failed';
+          order.status = payment_status;
           await storage.updateOrder(order);
-          console.log(`Payment callback processed: Order ${order.id} marked as failed`);
+          console.log(`Order ${order.id} marked as ${payment_status} via IPN`);
         }
+        res.status(200).json({ message: 'IPN processed' });
+      } else {
+        console.error(`Order ${order_id} not found`);
+        res.status(404).json({ error: 'Order not found' });
       }
-    }).catch((err) => console.error('Error updating order in callback:', err));
-
-    res.status(200).json({ success: true });
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error('Callback processing error:', err.message);
-    res.status(500).json({ error: 'Failed to process callback', details: err.message });
-  }
-});
-
-// Review routes
-app.post('/api/reviews', async (req: Request, res: Response) => {
-  try {
-    const { productId, userId, username, text, rating } = req.body as {
-      productId: number;
-      userId: number;
-      username: string;
-      text: string;
-      rating: number;
-    };
-    if (!productId || !userId || !username || !text || !rating) {
-      res.status(400).json({ error: 'Missing required fields' });
-      return;
-    }
-    if (rating < 1 || rating > 5) {
-      res.status(400).json({ error: 'Rating must be between 1 and 5' });
-      return;
-    }
-    const product = await storage.getProductById(productId);
-    if (!product) {
-      res.status(404).json({ error: 'Product not found' });
-      return;
-    }
-    const user = await storage.getUser(userId);
-    if (!user) {
-      res.status(404).json({ error: 'User not found' });
-      return;
-    }
-    const review = await storage.createReview({
-      productId,
-      userId,
-      username,
-      text,
-      rating,
     });
-    res.status(201).json({ message: 'Review submitted', review });
   } catch (error) {
-    console.error('Create review error:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
-
-app.get('/api/reviews/product/:productId', async (req: Request, res: Response) => {
-  try {
-    const productId = parseInt(req.params.productId);
-    const product = await storage.getProductById(productId);
-    if (!product) {
-      res.status(404).json({ error: 'Product not found' });
-      return;
-    }
-    const reviews = await storage.getReviewsByProduct(productId);
-    res.json(reviews);
-  } catch (error) {
-    console.error('Get reviews error:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
-
-// Admin routes
-app.get('/api/admin/orders', async (req: Request, res: Response) => {
-  try {
-    const orders = await storage.getUserOrders(parseInt(req.query.userId as string) || 0);
-    res.json(orders);
-  } catch (error) {
-    console.error('Get admin orders error:', error);
+    console.error('IPN callback error:', error);
     res.status(500).json({ error: (error as Error).message });
   }
 });
 
 app.post('/api/admin/add-product', async (req: Request, res: Response) => {
   try {
-    const { title, description, price, categoryId } = req.body as {
-      title: string;
-      description: string;
-      price: string;
-      categoryId: number;
-    };
+    const { title, description, price, categoryId } = req.body as InsertProduct;
     if (!title || !description || !price || !categoryId) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
@@ -567,17 +557,17 @@ app.post('/api/admin/add-product', async (req: Request, res: Response) => {
       description,
       price,
       categoryId,
-      originalPrice: null,
-      imageUrl: '',
-      rating: '0',
+      imageUrl: 'https://via.placeholder.com/150',
+      rating: '4.5',
       reviewCount: 0,
+      originalPrice: price,
       downloadCount: 0,
-      tags: [],
+      tags: ['new'],
       downloadUrl: '',
       isFree: false,
       isActive: true,
     });
-    res.status(201).json(product);
+    res.status(201).json({ message: 'Product added', product });
   } catch (error) {
     console.error('Add product error:', error);
     res.status(500).json({ error: (error as Error).message });
@@ -595,11 +585,19 @@ app.delete('/api/admin/remove-product/:id', async (req: Request, res: Response) 
   }
 });
 
-// Start the server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.get('/api/admin/orders', async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.query.userId as string);
+    const orders = await storage.getUserOrders(userId);
+    res.json(orders);
+  } catch (error) {
+    console.error('Get orders error:', error);
+    res.status(500).json({ error: (error as Error).message });
+  }
 });
 
-// Export app for Vercel
-export default app;
+// Start server
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});

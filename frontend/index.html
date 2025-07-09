@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TechMarket - Underground Marketplace</title>
+  <link rel="icon" type="image/x-icon" href="./favicon.ico">
   <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.15/babel.min.js"></script>
@@ -41,6 +42,19 @@
     #error {
       color: red;
       padding: 10px;
+    }
+    .avatar-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #3B82F6;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+      margin-right: 10px;
     }
   </style>
 </head>
@@ -231,12 +245,6 @@
                   Sign In/Sign Up
                 </button>
               )}
-              <button
-                className="text-white hover:text-gray-300 underline"
-                onClick={onShowAbout}
-              >
-                About Us
-              </button>
             </div>
           </div>
         </header>
@@ -269,6 +277,14 @@
     }
 
     function ProductCard({ product, addToCart, user, buyNow, onShowDetails }) {
+      const shareLink = `${window.location.origin}/product/${product.id}`;
+      
+      const copyLink = () => {
+        navigator.clipboard.writeText(shareLink).then(() => {
+          alert('Product link copied to clipboard!');
+        });
+      };
+
       return (
         <div
           className="bg-white rounded-lg shadow-md p-4 cursor-pointer transition-transform hover:scale-105 hover:shadow-xl"
@@ -280,21 +296,32 @@
           <div className="flex items-center gap-2 mt-2">
             <span className="text-yellow-500 slanted-text">{product.rating} ★</span>
             <span className="text-gray-500 text-sm slanted-text">({product.reviewCount} reviews)</span>
+            <a
+              href="mailto:service@toolhatch.shop"
+              className="text-blue-500 hover:underline slanted-text ml-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <i className="fas fa-envelope"></i>
+            </a>
+            <button
+              className="text-blue-500 hover:underline slanted-text ml-2"
+              onClick={(e) => { e.stopPropagation(); copyLink(); }}
+            >
+              <i className="fas fa-link"></i>
+            </button>
           </div>
           <div className="flex items-center justify-between mt-2">
-            <div>
-              <span className="text-xl font-bold text-green-600 slanted-text">${product.price}</span>
-            </div>
-            <div className="flex items-center space-x-2">
+            <span className="text-xl font-bold text-green-600 slanted-text">${product.price}</span>
+            <div className="flex flex-row justify-end gap-2 flex-wrap">
               <button
-                className="bg-blue-500 text-white px-2 py-1 text-sm rounded-lg hover:bg-blue-600 transition disabled:opacity-50"
+                className="bg-blue-500 text-white px-1 py-0.5 text-xs rounded-lg hover:bg-blue-600 transition disabled:opacity-50 sm:px-2 sm:py-1 sm:text-sm"
                 onClick={(e) => { e.stopPropagation(); addToCart(product.id); }}
                 disabled={!user}
               >
                 Add to Cart
               </button>
               <button
-                className="bg-green-500 text-white px-2 py-1 text-sm rounded-lg hover:bg-green-600 transition disabled:opacity-50"
+                className="bg-green-500 text-white px-1 py-0.5 text-xs rounded-lg hover:bg-green-600 transition disabled:opacity-50 sm:px-2 sm:py-1 sm:text-sm"
                 onClick={(e) => { e.stopPropagation(); buyNow(product.id); }}
                 disabled={!user}
               >
@@ -319,7 +346,7 @@
               <>
                 <ul className="space-y-4">
                   {cartItems.map(item => (
-                    <li key={item.id} className="flex justify-between items-center border-b pb-2">
+                    <li key={hatchtool.shopitem.id} className="flex justify-between items-center border-b pb-2">
                       <div>
                         <h3 className="font-semibold slanted-text">{item.product.title}</h3>
                         <p className="slanted-text">${item.product.price} x {item.quantity}</p>
@@ -741,6 +768,115 @@
     }
 
     function ProductDetailsModal({ product, onClose, user, buyNow }) {
+      const [reviewData, setReviewData] = React.useState({ reviews: [], contactEmail: 'service@toolhatch.shop' });
+      const shareLink = `${window.location.origin}/product/${product.id}`;
+
+      const firstNames = [
+        'James', 'Emma', 'Liam', 'Olivia', 'Noah', 'Ava', 'William', 'Sophia', 'Michael', 'Isabella',
+        'Alexander', 'Mia', 'Daniel', 'Charlotte', 'Henry', 'Amelia', 'Joseph', 'Harper', 'David', 'Evelyn',
+        'Thomas', 'Abigail', 'Charles', 'Emily', 'George', 'Elizabeth', 'Samuel', 'Mila', 'John', 'Ella'
+      ];
+      const lastNames = [
+        'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez',
+        'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin',
+        'Lee', 'Perez', 'Thompson', 'White', 'Harris', 'Sanchez', 'Clark', 'Ramirez', 'Lewis', 'Walker'
+      ];
+      const reviewTexts = [
+        'Great product, highly recommend!',
+        'Works as expected, very satisfied.',
+        'Excellent quality, will buy again.',
+        'Really impressed with the features.',
+        'Good value for the price.',
+        'Fast delivery and solid product.',
+        'Exceeded my expectations!',
+        'Decent product, does the job.',
+        'Very useful tool, love it.',
+        'Reliable and well-made.',
+        'Perfect for my needs.',
+        'Could be better, but still good.',
+        'Amazing service and product.',
+        'Top-notch quality, no complaints.',
+        'Super easy to use!'
+      ];
+
+      const generateReviewPool = () => {
+        const reviews = [];
+        const usedNames = new Set();
+        for (let i = 0; i < 45; i++) {
+          let username;
+          do {
+            const first = firstNames[Math.floor(Math.random() * firstNames.length)];
+            const last = lastNames[Math.floor(Math.random() * lastNames.length)];
+            username = `${first} ${last}`;
+          } while (usedNames.has(username));
+          usedNames.add(username);
+          reviews.push({
+            id: i + 1,
+            productId: null,
+            userId: i + 1,
+            username,
+            text: reviewTexts[Math.floor(Math.random() * reviewTexts.length)],
+            rating: Math.floor(Math.random() * 5) + 1,
+            createdAt: new Date(Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000)).toISOString()
+          });
+        }
+        return reviews;
+      };
+
+      const reviewPool = generateReviewPool();
+
+      const shuffleReviews = (array, seed) => {
+        const shuffled = [...array];
+        let m = shuffled.length, t, i;
+        while (m) {
+          i = Math.floor(seededRandom(seed + m) * m--);
+          t = shuffled[m];
+          shuffled[m] = shuffled[i];
+          shuffled[i] = t;
+        }
+        return shuffled;
+      };
+
+      const seededRandom = (seed) => {
+        const x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+      };
+
+      React.useEffect(() => {
+        fetch(`/api/reviews/${product.id}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.reviews && data.reviews.length > 0) {
+              setReviewData({ reviews: data.reviews, contactEmail: data.contactEmail || 'service@toolhatch.shop' });
+            } else {
+              const numReviews = Math.floor(seededRandom(product.id) * 3) + 1;
+              const shuffledReviews = shuffleReviews(reviewPool, product.id);
+              const selectedReviews = shuffledReviews.slice(0, numReviews).map(review => ({
+                ...review,
+                productId: product.id
+              }));
+              setReviewData({ reviews: selectedReviews, contactEmail: 'service@toolhatch.shop' });
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching reviews:', err);
+            document.getElementById('error').textContent = `Error fetching reviews: ${err.message}`;
+            const numReviews = Math.floor(seededRandom(product.id) * 3) + 1;
+            const shuffledReviews = shuffleReviews(reviewPool, product.id);
+            const selectedReviews = shuffledReviews.slice(0, numReviews).map(review => ({
+              ...review,
+              productId: product.id
+            }));
+            setReviewData({ reviews: selectedReviews, contactEmail: 'service@toolhatch.shop' });
+          });
+      }, [product.id]);
+
+      const copyLink = () => {
+        navigator.clipboard.writeText(shareLink).then(() => {
+          alert('Product link copied to clipboard!');
+        });
+      };
+
       return (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex justify-center items-center"
@@ -756,13 +892,33 @@
             <div className="flex items-center gap-2 mb-4">
               <span className="text-yellow-500 slanted-text">{product.rating} ★</span>
               <span className="text-gray-500 text-sm slanted-text">({product.reviewCount} reviews)</span>
+              <button
+                className="text-blue-500 hover:underline slanted-text ml-2"
+                onClick={copyLink}
+              >
+                <i className="fas fa-link"></i> Share
+              </button>
             </div>
             <div className="mb-4">
               <h3 className="text-lg font-semibold slanted-text">Reviews</h3>
-              <ul className="list-disc pl-5">
-                <li className="text-gray-600 slanted-text">Great product! - User1 ★★★★★</li>
-                <li className="text-gray-600 slanted-text">Good value for money. - User2 ★★★★☆</li>
+              <ul className="space-y-4">
+                {reviewData.reviews.map(review => (
+                  <li key={review.id} className="flex items-start">
+                    <div className="avatar-circle">{review.username.charAt(0)}</div>
+                    <div>
+                      <p className="font-semibold slanted-text">{review.username}</p>
+                      <p className="text-gray-600 slanted-text">{review.text} <span className="text-yellow-500">{'★'.repeat(review.rating)}</span></p>
+                      <p className="text-gray-500 text-sm slanted-text">{new Date(review.createdAt).toLocaleDateString()}</p>
+                    </div>
+                  </li>
+                ))}
               </ul>
+              <a
+                href="mailto:service@toolhatch.shop"
+                className="text-blue-500 hover:underline text-sm slanted-text mt-4 inline-block"
+              >
+                Contact Seller
+              </a>
             </div>
             <div className="flex items-center justify-between mt-4">
               <span className="text-xl font-bold text-green-600 slanted-text">${product.price}</span>
@@ -895,7 +1051,7 @@
         <div className="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-4 text-gray-800">Support or Enquiry</h2>
-            <p className="mb-4">Contact us at: <a href="mailto:info@toolhatch.store" className="text-blue-500 hover:underline">info@toolhatch.store</a></p>
+            <p className="mb-4">Contact us at: <a href="mailto:info@hatchtool.shop" className="text-blue-500 hover:underline">info@hatchtool.shop</a></p>
             <form>
               <input type="text" placeholder="Username" className="w-full p-2 mb-4 border rounded-lg" id="support-username" />
               <textarea placeholder="Review" className="w-full p-2 mb-4 border rounded-lg" id="support-review" rows="4"></textarea>
@@ -952,6 +1108,27 @@
       const [selectedProduct, setSelectedProduct] = React.useState(null);
       const [showAbout, setShowAbout] = React.useState(false);
 
+      // Handle URL-based product detail navigation
+      const handlePopState = () => {
+        const path = window.location.pathname;
+        const match = path.match(/^\/product\/(\d+)$/);
+        if (match) {
+          const productId = parseInt(match[1]);
+          const product = products.find(p => p.id === productId);
+          if (product) {
+            setSelectedProduct(product);
+            setShowDetails(true);
+          } else {
+            setShowDetails(false);
+            setSelectedProduct(null);
+            window.history.pushState({}, '', '/');
+          }
+        } else {
+          setShowDetails(false);
+          setSelectedProduct(null);
+        }
+      };
+
       React.useEffect(() => {
         fetch('/api/categories')
           .then(res => res.json())
@@ -959,7 +1136,20 @@
           .catch(err => document.getElementById('error').textContent = `Error fetching categories: ${err.message}`);
         fetch('/api/products')
           .then(res => res.json())
-          .then(setProducts)
+          .then(data => {
+            setProducts(data);
+            // Check URL for product ID on initial load
+            const path = window.location.pathname;
+            const match = path.match(/^\/product\/(\d+)$/);
+            if (match) {
+              const productId = parseInt(match[1]);
+              const product = data.find(p => p.id === productId);
+              if (product) {
+                setSelectedProduct(product);
+                setShowDetails(true);
+              }
+            }
+          })
           .catch(err => document.getElementById('error').textContent = `Error fetching products: ${err.message}`);
         const userId = localStorage.getItem('userId');
         const username = localStorage.getItem('username');
@@ -980,9 +1170,11 @@
         window.addEventListener('search', handleSearch);
         const handleCartCleared = () => setCartItems([]);
         window.addEventListener('cart-cleared', handleCartCleared);
+        window.addEventListener('popstate', handlePopState);
         return () => {
           window.removeEventListener('search', handleSearch);
           window.removeEventListener('cart-cleared', handleCartCleared);
+          window.removeEventListener('popstate', handlePopState);
         };
       }, []);
 
@@ -1081,12 +1273,23 @@
         const product = products.find(p => p.id === productId);
         setSelectedProduct(product);
         setShowDetails(true);
+        window.history.pushState({}, '', `/product/${productId}`);
+      };
+
+      const handleCloseDetails = () => {
+        setShowDetails(false);
+        setSelectedProduct(null);
+        window.history.pushState({}, '', '/');
       };
 
       const handleBackFromDeveloper = () => {
         setShowDeveloper(false);
         setShowCart(false);
-        setShowDetails(false);
+        if (currentProductId) {
+          setShowDetails(true);
+        } else {
+          setShowDetails(false);
+        }
       };
 
       return (
@@ -1119,7 +1322,7 @@
           {showDetails && selectedProduct && (
             <ProductDetailsModal
               product={selectedProduct}
-              onClose={() => setShowDetails(false)}
+              onClose={handleCloseDetails}
               user={user}
               buyNow={buyNow}
             />
