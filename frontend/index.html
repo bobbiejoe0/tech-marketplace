@@ -10,6 +10,33 @@
   <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.15/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js';
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCRTsfNLYZn0UKRHpApyDcrodhVoFY5i6M",
+      authDomain: "ecommerce-bdf9f.firebaseapp.com",
+      projectId: "ecommerce-bdf9f",
+      storageBucket: "ecommerce-bdf9f.firebasestorage.app",
+      messagingSenderId: "568896302785",
+      appId: "1:568896302785:web:b68d1b3d105a680fc5ae40",
+      measurementId: "G-HDRB8MX387"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Expose Firebase auth and Firestore to global scope for React components
+    window.firebaseAuth = { auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
+    window.firestore = { db, collection, addDoc };
+  </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
     body {
@@ -79,41 +106,40 @@
         try {
           if (isLogin) {
             if (!identifier || !password) {
-              setError('Email/Username and password are required');
+              setError('Email and password are required');
               return;
             }
-            const response = await fetch('/api/login', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email: identifier, password })
-            });
-            const data = await response.json();
-            if (response.ok) {
-              onLogin(data.id, data.username);
-              onClose();
-            } else {
-              setError(data.error || 'Login failed');
-            }
+            const { user } = await window.firebaseAuth.signInWithEmailAndPassword(
+              window.firebaseAuth.auth,
+              identifier,
+              password
+            );
+            onLogin(user.uid, user.email.split('@')[0]);
+            onClose();
           } else {
             if (!username || !email || !password) {
               setError('Username, email, and password are required for signup');
               return;
             }
-            const response = await fetch('/api/create-user', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ username, email, password, firstName, lastName })
+            const { user } = await window.firebaseAuth.createUserWithEmailAndPassword(
+              window.firebaseAuth.auth,
+              email,
+              password
+            );
+            // Save additional user details to Firestore
+            await window.firestore.addDoc(window.firestore.collection(window.firestore.db, 'users'), {
+              uid: user.uid,
+              username,
+              email,
+              firstName,
+              lastName,
+              createdAt: new Date().toISOString()
             });
-            const data = await response.json();
-            if (response.ok) {
-              onSignup(data.id, data.username);
-              onClose();
-            } else {
-              setError(data.error || 'Signup failed');
-            }
+            onSignup(user.uid, username);
+            onClose();
           }
         } catch (err) {
-          setError('Network error');
+          setError(err.message || 'Authentication failed');
           document.getElementById('error').textContent = `Error: ${err.message}`;
         }
       };
@@ -157,8 +183,8 @@
                 </>
               )}
               <input
-                type="text"
-                placeholder="Email or Username"
+                type="email"
+                placeholder="Email"
                 className="w-full p-2 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
@@ -346,7 +372,7 @@
               <>
                 <ul className="space-y-4">
                   {cartItems.map(item => (
-                    <li key={hatchtool.shopitem.id} className="flex justify-between items-center border-b pb-2">
+                    <li key={item.productId} className="flex justify-between items-center border-b pb-2">
                       <div>
                         <h3 className="font-semibold slanted-text">{item.product.title}</h3>
                         <p className="slanted-text">${item.product.price} x {item.quantity}</p>
@@ -430,6 +456,15 @@
         spinner.classList.remove('hidden');
 
         try {
+          // Save developer email to Firestore
+          await window.firestore.addDoc(window.firestore.collection(window.firestore.db, 'developer_emails'), {
+            userId: parseInt(localStorage.getItem('userId')),
+            isDeveloper,
+            email: isDeveloper === 'yes' ? githubEmail : developerEmail,
+            productId: productId || null,
+            createdAt: new Date().toISOString()
+          });
+
           let order;
           if (productId) {
             const orderResponse = await fetch('/api/create-order', {
@@ -447,7 +482,10 @@
             if (!cartResponse.ok) {
               if (cartResponse.status === 404) {
                 alert('User not found. Please login again.');
-                handleLogout();
+                window.firebaseAuth.signOut(window.firebaseAuth.auth);
+                localStorage.removeItem('userId');
+                localStorage.removeItem('username');
+                window.location.reload();
               }
               throw new Error('Failed to fetch cart');
             }
@@ -470,12 +508,6 @@
             }
             order = await orderResponse.json();
           }
-
-          await fetch('/api/log-developer', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: parseInt(localStorage.getItem('userId')), isDeveloper, githubEmail, developerEmail })
-          });
 
           const amount = productId ? parseFloat(products.find(p => p.id === productId)?.price || '0') : order.totalAmount;
           if (isNaN(amount) || amount <= 0) {
@@ -1154,7 +1186,7 @@
         const userId = localStorage.getItem('userId');
         const username = localStorage.getItem('username');
         if (userId && username) {
-          setUser({ id: parseInt(userId), username });
+          setUser({ id: userId, username });
           fetch(`/api/cart/${userId}`)
             .then(res => res.json())
             .then(setCartItems)
@@ -1246,6 +1278,7 @@
       };
 
       const handleLogout = () => {
+        window.firebaseAuth.signOut(window.firebaseAuth.auth);
         setUser(null);
         setCartItems([]);
         localStorage.removeItem('userId');
